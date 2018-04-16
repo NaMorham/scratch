@@ -32,6 +32,47 @@ private:
     std::string m_expected;
 };
 
+void ColTest(uint32_t val)
+{
+    std::cerr << "Test [" /*<< std::setw(12)*/ << ConsoleDisplay::ColourStr(val) << "]\n\t - fore [ win : ";
+    std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, true)) << ", ansi : ";
+    std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, false)) << "]\n\t - back [ win : ";
+    std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, true)) << ", ansi : ";
+    std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, false)) << "]" << std::endl;
+}
+
+void lookupTests()
+{
+    ColTest(ConsoleDisplay::None);
+    ColTest(ConsoleDisplay::Black);
+    ColTest(ConsoleDisplay::Red);
+    ColTest(ConsoleDisplay::Green);
+    ColTest(ConsoleDisplay::Yellow);
+    ColTest(ConsoleDisplay::Blue);
+    ColTest(ConsoleDisplay::Magenta);
+    ColTest(ConsoleDisplay::Cyan);
+    ColTest(ConsoleDisplay::White);
+
+    std::cerr << std::endl;
+
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::None);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Black);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Red);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Green);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Yellow);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Blue);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Magenta);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::Cyan);
+    ColTest(ConsoleDisplay::Bold | ConsoleDisplay::White);
+
+    std::cerr << std::endl;
+
+    ColTest(11);
+    ColTest(27);
+
+    std::cerr << std::endl;
+}
+
 int main(int argc, char ** argv, char **env)
 {
     std::cout << "Press <enter>:";
@@ -49,10 +90,14 @@ int main(int argc, char ** argv, char **env)
     ConsoleDisplay::allColours();
 
     std::cerr << std::endl << "Test [";
-    ConsoleDisplay::winCol(7, 4, "Hello", std::cerr);
+    //ConsoleDisplay::winCol(7, 4, "Hello", std::cerr);
+    ConsoleDisplay::colText(ConsoleDisplay::Bold|ConsoleDisplay::White, ConsoleDisplay::Red, "Hello", std::cerr);
 
-    ConsoleDisplay::winCol(7, 2, " World", std::cerr);
-    std::cerr << "]" << std::endl;
+    //ConsoleDisplay::winCol(7, 2, " World", std::cerr);
+    ConsoleDisplay::colText(ConsoleDisplay::Black, ConsoleDisplay::Bold|ConsoleDisplay::Cyan, " World", std::cerr);
+    std::cerr << "]" << std::endl << std::endl;
+
+    lookupTests();
 
     return 0;
 }

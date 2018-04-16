@@ -3,6 +3,87 @@
 //#include <sstream>
 #include <iostream>
 
+
+
+ConsoleDisplay::ColLookup_t lookup[ConsoleDisplay::NUM_COLOURS] = {
+    ConsoleDisplay::ColLookup_t(ConsoleDisplay::NO_COL, ConsoleDisplay::NO_COL),
+    ConsoleDisplay::ColLookup_t(30, 0),
+    ConsoleDisplay::ColLookup_t(31, 4),
+    ConsoleDisplay::ColLookup_t(32, 2),
+    ConsoleDisplay::ColLookup_t(33, 6),
+    ConsoleDisplay::ColLookup_t(34, 1),
+    ConsoleDisplay::ColLookup_t(35, 5),
+    ConsoleDisplay::ColLookup_t(36, 3),
+    ConsoleDisplay::ColLookup_t(37, 7)
+};
+
+std::string ConsoleDisplay::ColourStr(uint32_t col)
+{
+    static std::string colStr[] = {
+        "None",
+        "Black",
+        "Red",
+        "Green",
+        "Yellow",
+        "Blue",
+        "Magenta",
+        "Cyan",
+        "White"
+    };
+    
+    std::string result(isBold(col) ? "Bold " : "");
+    col &= COL_MASK;
+    return result.append(col > White ? std::string("Unk") : colStr[col]);
+}
+
+uint32_t ConsoleDisplay::GetColValue(uint32_t col, bool isWin /*= ms_isWindowsConsole*/)
+{
+    bool isBold = ConsoleDisplay::isBold(col);
+    col &= COL_MASK;
+    uint32_t result;
+    if ((col == ConsoleDisplay::None) || (col > White))
+    {
+        result = NO_COL;
+    }
+    else
+    {
+        result = (isWin ? lookup[col].win : lookup[col].ansi);
+
+        if (isBold)
+        {
+            result += (isWin ? 8 : 60);
+        }
+    }
+    return result;
+}
+
+uint32_t ConsoleDisplay::GetBGColValue(uint32_t col, bool isWin /*= ms_isWindowsConsole*/)
+{
+    uint32_t result(GetColValue(col, isWin));
+    return (result == NO_COL ? result : (isWin ? result * 16 : result + 10));
+}
+
+//std::ostream& ConsoleDisplay::colText(std::string text, std::ostream& os,
+//    uint32_t fore /*= ConsoleDisplay::None*/, uint32_t back /*= ConsoleDisplay::None*/, bool isWin /*= ms_isWindowsConsole*/)
+//{
+//    if (isWin)
+//    {
+//        HANDLE hStd = getStdHandle(os);
+//        if (ms_usingColour && (hStd != INVALID_HANDLE_VALUE))
+//        {
+//        }
+//        os << text;
+//        if (ms_usingColour && (hStd != INVALID_HANDLE_VALUE))
+//        {
+//        }
+//    }
+//    else
+//    {
+//        os << text;
+//    }
+//    return os;
+//}
+
 ConsoleDisplay::ConsoleDisplay()
 {
     std::cerr << "Created ConsoleDisplay" << std::endl;
@@ -23,6 +104,8 @@ ConsoleDisplay::ConsoleDisplay()
     ms_isWindowsConsole = false;
 #endif
     ms_usingColour = true;
+
+    InitDefaultAttr();
 
     std::cerr << "usingColour [" << std::to_string(ms_usingColour) << "], usingANSI [" << std::to_string(ms_usingANSI) << "], isWindowsConsole [" << std::to_string(ms_isWindowsConsole) << "]" << std::endl;
 }
@@ -78,6 +161,16 @@ const char* ConsoleDisplay::_off_MAG = "";
 const char* ConsoleDisplay::_off_CYN = "";
 const char* ConsoleDisplay::_off_WHT = "";
 
+const char* ConsoleDisplay::NRM = "";
+const char* ConsoleDisplay::BLD = "";
+const char* ConsoleDisplay::BLK = "";
+const char* ConsoleDisplay::RED = "";
+const char* ConsoleDisplay::GRN = "";
+const char* ConsoleDisplay::YRL = "";
+const char* ConsoleDisplay::BLU = "";
+const char* ConsoleDisplay::MAG = "";
+const char* ConsoleDisplay::CYN = "";
+const char* ConsoleDisplay::WHT = "";
 
 void ConsoleDisplay::allColours()
 {
@@ -140,15 +233,6 @@ void ConsoleDisplay::allColours()
         {
             // not a windows console
             size_t i, j;
-            HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (GetLastError() == ERROR_INVALID_HANDLE)
-            {
-                std::cerr << "Could not get stdout handle" << std::endl;
-                ms_isWindowsConsole = false;
-                return;
-            }
-            printLastError();
-            WORD prevVal = 7;
 
             std::printf("i\\j|");
             for (i = 0; i < 16; i++)
@@ -166,8 +250,18 @@ void ConsoleDisplay::allColours()
                 std::printf("%2d |", i);
                 for (j = 0; j < 16; j++)
                 {
+                    size_t f((i % 8) + 30);
+                    size_t b((j % 8) + 40);
+                    if (i >= 8)
+                    {
+                        f += 60;
+                    }
+                    if (j >= 8)
+                    {
+                        b += 60;
+                    }
                     WORD val = static_cast<WORD>((j * 16) + i);
-                    std::printf("%3d", val);
+                    std::printf("\033[%d;%dm%3d\033[0m", f, b, val);
                     std::printf("|");
                 }
                 std::printf("\n");
@@ -182,28 +276,46 @@ void ConsoleDisplay::allColours()
     }
 }
 
-std::ostream& ConsoleDisplay::winCol(WORD fore, WORD back, std::string text, std::ostream& os, bool restore /*= true*/)
+std::ostream& ConsoleDisplay::winCol(uint32_t fore, uint32_t back, std::string text, std::ostream& os, bool restore /*= true*/)
 {
 #ifdef _MSC_VER
     HANDLE hConsole = INVALID_HANDLE_VALUE;
     if (ms_isWindowsConsole && ms_usingColour)
     {
-        fore = fore % 16;
-        back = back % 16;
-        WORD val = (back * 16) + fore;
-        hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, val);
+        WORD val = WORD(back + fore);
+        hConsole = getStdHandle(os);
+        if (hConsole != INVALID_HANDLE_VALUE)
+        {
+            SetConsoleTextAttribute(hConsole, val);
+        }
     }
 #endif
     os << text;
 #ifdef _MSC_VER
     if (restore && ms_isWindowsConsole && ms_usingColour && (hConsole != INVALID_HANDLE_VALUE))
     {
-        SetConsoleTextAttribute(hConsole, 7);
+        SetConsoleTextAttribute(hConsole, ms_defaultAttr);
     }
 #endif
 
     return os;
+}
+
+std::ostream& ConsoleDisplay::colText(uint32_t fore, uint32_t back, std::string text, std::ostream& os,
+    bool restore /*= true*/, bool isWin /*= ms_isWindowsConsole*/)
+{
+    uint32_t f = GetColValue(fore, isWin);
+    uint32_t b = GetBGColValue(back, isWin);
+
+    if (isWin)
+    {
+        return winCol(fore, back, text, os, restore);
+    }
+    else
+    {
+        return os;
+    }
+
 }
 
 #include <iostream>
@@ -296,3 +408,70 @@ std::string ConsoleDisplay::getEnvVar(std::string var)
     }
     return envVar;
 }
+
+HANDLE ConsoleDisplay::getStdHandle(std::ostream& os)
+{
+    HANDLE hStd = INVALID_HANDLE_VALUE;
+
+    if (os.rdbuf() == std::cout.rdbuf())
+    {
+        hStd = GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+    else if (os.rdbuf() == std::cerr.rdbuf())
+    {
+        hStd = GetStdHandle(STD_ERROR_HANDLE);
+    }
+
+    return hStd;
+}
+
+void ConsoleDisplay::InitDefaultAttr()
+{
+#ifdef _MSC_VER
+    if (ms_isWindowsConsole)
+    {
+        CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        if (hStdout == INVALID_HANDLE_VALUE)
+        {
+            return;
+        }
+
+        if (!GetConsoleScreenBufferInfo(hStdout, &csbiInfo))
+        {
+            return;
+        }
+
+        ms_defaultAttr = csbiInfo.wAttributes;
+    }
+    else
+    {
+        ms_defaultAttr = 7;
+    }
+#else
+    ms_defaultAttr = 0;
+#endif
+}
+
+std::ostream& ConsoleDisplay::reset(std::ostream& os, bool isWin /*= ConsoleDisplay::ms_isWindowsConsole*/)
+{
+    if (isWin)
+    {
+#ifdef _MSC_VER
+        HANDLE hConsole = getStdHandle(os);
+
+        if (hConsole != INVALID_HANDLE_VALUE)
+        {
+            SetConsoleTextAttribute(hConsole, ms_defaultAttr);
+        }
+#endif
+    }
+    else
+    {
+        os << NRM;
+    }
+    return os;
+}
+
+WORD ConsoleDisplay::ms_defaultAttr = 0;

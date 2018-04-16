@@ -179,7 +179,7 @@ void ConsoleDisplay::allColours()
         if (ms_isWindowsConsole)
         {
 #ifdef _MSC_VER
-            size_t i, j;
+            int i, j;
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
             if (GetLastError() == ERROR_INVALID_HANDLE)
             {
@@ -232,7 +232,7 @@ void ConsoleDisplay::allColours()
         else
         {
             // not a windows console
-            size_t i, j;
+            int i, j;
 
             std::printf("i\\j|");
             for (i = 0; i < 16; i++)
@@ -250,8 +250,8 @@ void ConsoleDisplay::allColours()
                 std::printf("%2d |", i);
                 for (j = 0; j < 16; j++)
                 {
-                    size_t f((i % 8) + 30);
-                    size_t b((j % 8) + 40);
+                    int f((i % 8) + 30);
+                    int b((j % 8) + 40);
                     if (i >= 8)
                     {
                         f += 60;
@@ -260,7 +260,7 @@ void ConsoleDisplay::allColours()
                     {
                         b += 60;
                     }
-                    WORD val = static_cast<WORD>((j * 16) + i);
+                    int val = ((j * 16) + i);
                     std::printf("\033[%d;%dm%3d\033[0m", f, b, val);
                     std::printf("|");
                 }

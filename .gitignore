@@ -8,3 +8,7 @@ build/*
 *.pch
 .DS_Store
 thumbs.db
+.vs
+**/Debug/*
+**/Release/*
+**/build/**

@@ -2,13 +2,32 @@
 #include <memory>
 #include <string>
 
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
+
+class ConsoleDisplay;
+
+//typedef std::shared_ptr<ConsoleDisplay> PConsoleDisplay;
+
 class ConsoleDisplay
 {
 public:
-    static std::shared_ptr<ConsoleDisplay> get() { }
+    static ConsoleDisplay& get();
 
-    static bool usingColour;
-    static bool usingansi;
+    static void allColours();
+
+    static std::ostream& winCol(WORD fore, WORD back, std::string text, std::ostream& os, bool restore = true);
+
+    static void printLastError();
+
+    static std::string GetLastErrorText(uint32_t err);
+
+    static std::string getEnvVar(std::string var);
+
+    static bool isWindowsConsole() { return ms_isWindowsConsole; }
+    static bool usingColour() { return ms_usingColour; }
+    static bool usingansi() { return ms_usingANSI; }
 
     const char *NRM;
     const char *BLD;
@@ -43,19 +62,18 @@ public:
     static const char* _off_CYN;
     static const char* _off_WHT;
 
+
 private:
     ConsoleDisplay();
     virtual ~ConsoleDisplay();
 
-    bool m_isAnsi;
+    ConsoleDisplay(ConsoleDisplay& orig) = delete;
+    ConsoleDisplay(ConsoleDisplay&& orig) = delete;
+    ConsoleDisplay& operator=(ConsoleDisplay& orig) = delete;
+    ConsoleDisplay& operator=(ConsoleDisplay&& orig) = delete;
 
-    static std::shared_ptr<ConsoleDisplay> ms_console;
+    static bool ms_usingANSI;
+    static bool ms_usingColour;
+    static bool ms_isWindowsConsole;
 };
 
-#ifdef _MSC_VER
-#include <Windows.h>
-#endif
-
-void allColours();
-
-std::ostream& winCol(WORD fore, WORD back, std::string text, std::ostream& os, bool restore = true);

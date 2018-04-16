@@ -34,17 +34,24 @@ private:
 
 int main(int argc, char ** argv, char **env)
 {
+    std::cout << "Press <enter>:";
+    std::string val;
+    std::getline(std::cin, val, '\n');
+
+    //PConsoleDisplay pConsole = ConsoleDisplay::get();
+    ConsoleDisplay& theConsole = ConsoleDisplay::get();
+
     std::printf("Tests built: " __DATE__ ", " __TIME__ "\n");
 
     Test1 t1("t1", "foo", "bar");
     std::cerr << t1 << std::endl;
 
-    allColours();
+    ConsoleDisplay::allColours();
 
-    std::cerr << "Test [";
-    winCol(7, 4, "Hello", std::cerr);
+    std::cerr << std::endl << "Test [";
+    ConsoleDisplay::winCol(7, 4, "Hello", std::cerr);
 
-    winCol(7, 2, " World", std::cerr);
+    ConsoleDisplay::winCol(7, 2, " World", std::cerr);
     std::cerr << "]" << std::endl;
 
     return 0;

@@ -5,19 +5,29 @@
 
 
 
-ConsoleDisplay::ColLookup_t lookup[ConsoleDisplay::NUM_COLOURS] = {
-    ConsoleDisplay::ColLookup_t(ConsoleDisplay::NO_COL, ConsoleDisplay::NO_COL),
-    ConsoleDisplay::ColLookup_t(30, 0),
-    ConsoleDisplay::ColLookup_t(31, 4),
-    ConsoleDisplay::ColLookup_t(32, 2),
-    ConsoleDisplay::ColLookup_t(33, 6),
-    ConsoleDisplay::ColLookup_t(34, 1),
-    ConsoleDisplay::ColLookup_t(35, 5),
-    ConsoleDisplay::ColLookup_t(36, 3),
-    ConsoleDisplay::ColLookup_t(37, 7)
+ConsoleDisplay::ColLookup_t lookup[ConsoleDisplay::NUM_TOTAL_COLOURS] = {
+    // STD colours
+    ConsoleDisplay::ColLookup_t(ConsoleDisplay::NO_COL, ConsoleDisplay::NO_COL),  // None
+    ConsoleDisplay::ColLookup_t(30, 0),  // Black
+    ConsoleDisplay::ColLookup_t(31, 4),  // Red
+    ConsoleDisplay::ColLookup_t(32, 2),  // Green
+    ConsoleDisplay::ColLookup_t(33, 6),  // Yellow
+    ConsoleDisplay::ColLookup_t(34, 1),  // Blue
+    ConsoleDisplay::ColLookup_t(35, 5),  // Magenta
+    ConsoleDisplay::ColLookup_t(36, 3),  // Cyan
+    ConsoleDisplay::ColLookup_t(37, 7),  // White
+    // BOLD colours
+    ConsoleDisplay::ColLookup_t(40, 8),  // B_Black
+    ConsoleDisplay::ColLookup_t(41, 12), // B_Red
+    ConsoleDisplay::ColLookup_t(42, 10), // B_Green
+    ConsoleDisplay::ColLookup_t(43, 14), // B_Yellow
+    ConsoleDisplay::ColLookup_t(44, 9),  // B_Blue
+    ConsoleDisplay::ColLookup_t(45, 13), // B_Magenta
+    ConsoleDisplay::ColLookup_t(46, 11), // B_Cyan
+    ConsoleDisplay::ColLookup_t(47, 15)  // B_White
 };
 
-std::string ConsoleDisplay::ColourStr(uint32_t col)
+std::string ConsoleDisplay::ColourStr(eColours col)
 {
     static std::string colStr[] = {
         "None",
@@ -32,32 +42,27 @@ std::string ConsoleDisplay::ColourStr(uint32_t col)
     };
     
     std::string result(isBold(col) ? "Bold " : "");
-    col &= COL_MASK;
-    return result.append(col > White ? std::string("Unk") : colStr[col]);
+    eColours rawCol = static_cast<eColours>(col - B_Black);
+    if (rawCol < 0)
+        rawCol = None;
+    return result.append(rawCol > White ? std::string("Unk") : colStr[rawCol]);
 }
 
-uint32_t ConsoleDisplay::GetColValue(uint32_t col, bool isWin /*= ms_isWindowsConsole*/)
+uint32_t ConsoleDisplay::GetColValue(eColours col, bool isWin /*= ms_isWindowsConsole*/)
 {
-    bool isBold = ConsoleDisplay::isBold(col);
-    col &= COL_MASK;
     uint32_t result;
-    if ((col == ConsoleDisplay::None) || (col > White))
+    if ((col == ConsoleDisplay::None) || (col > B_White))
     {
         result = NO_COL;
     }
     else
     {
         result = (isWin ? lookup[col].win : lookup[col].ansi);
-
-        if (isBold)
-        {
-            result += (isWin ? 8 : 60);
-        }
     }
     return result;
 }
 
-uint32_t ConsoleDisplay::GetBGColValue(uint32_t col, bool isWin /*= ms_isWindowsConsole*/)
+uint32_t ConsoleDisplay::GetBGColValue(eColours col, bool isWin /*= ms_isWindowsConsole*/)
 {
     uint32_t result(GetColValue(col, isWin));
     return (result == NO_COL ? result : (isWin ? result * 16 : result + 10));
@@ -86,7 +91,7 @@ uint32_t ConsoleDisplay::GetBGColValue(uint32_t col, bool isWin /*= ms_isWindows
 
 ConsoleDisplay::ConsoleDisplay()
 {
-    std::cerr << "Created ConsoleDisplay" << std::endl;
+    std::cerr << "[ConsoleDisplay] Created" << std::endl;
 #ifdef _MSC_VER
     //HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     //ms_isWindowsConsole = (INVALID_HANDLE_VALUE == hConsole);
@@ -107,13 +112,13 @@ ConsoleDisplay::ConsoleDisplay()
 
     InitDefaultAttr();
 
-    std::cerr << "usingColour [" << std::to_string(ms_usingColour) << "], usingANSI [" << std::to_string(ms_usingANSI) << "], isWindowsConsole [" << std::to_string(ms_isWindowsConsole) << "]" << std::endl;
+    std::cerr << "[ConsoleDisplay] usingColour [" << std::to_string(ms_usingColour) << "], usingANSI [" << std::to_string(ms_usingANSI) << "], isWindowsConsole [" << std::to_string(ms_isWindowsConsole) << "]" << std::endl;
 }
 
 
 ConsoleDisplay::~ConsoleDisplay()
 {
-    std::cerr << "Destroyed ConsoleDisplay" << std::endl;
+    std::cerr << "[ConsoleDisplay] Destroyed ConsoleDisplay" << std::endl;
 }
 
 /*
@@ -174,23 +179,25 @@ const char* ConsoleDisplay::WHT = "";
 
 void ConsoleDisplay::allColours()
 {
+    std::string fname("[" __FUNCTION__ "]");
     if (ms_usingColour)
     {
         if (ms_isWindowsConsole)
         {
+            std::cerr << fname << " Render as a windows console" << std::endl;
 #ifdef _MSC_VER
             int i, j;
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
             if (GetLastError() == ERROR_INVALID_HANDLE)
             {
-                std::cerr << "Could not get stdout handle" << std::endl;
+                std::cerr << fname << " Could not get stdout handle" << std::endl;
                 ms_isWindowsConsole = false;
                 return;
             }
             printLastError();
             WORD prevVal = 7;
 
-            std::printf("i\\j|");
+            std::printf("\ni\\j|");
             for (i = 0; i < 16; i++)
             {
                 std::printf("%3d|", i);
@@ -232,22 +239,23 @@ void ConsoleDisplay::allColours()
         else
         {
             // not a windows console
+            std::cerr << fname << " Render as a non-windows console" << std::endl;
             int i, j;
 
-            std::printf("i\\j|");
+            std::printf("\ni\\j|");
             for (i = 0; i < 16; i++)
             {
-                std::printf("%3d|", i);
+                std::printf(" %3d  |", i + (i >= 8 ? 92 : 40));
             }
             std::printf("\n---+");
             for (i = 0; i < 16; i++)
             {
-                std::printf("---+");
+                std::printf("------+");
             }
             std::printf("\n");
             for (i = 0; i < 16; i++)
             {
-                std::printf("%2d |", i);
+                std::printf("%2d |", i + (i >= 8 ? 82 : 30));
                 for (j = 0; j < 16; j++)
                 {
                     int f((i % 8) + 30);
@@ -260,9 +268,8 @@ void ConsoleDisplay::allColours()
                     {
                         b += 60;
                     }
-                    int val = ((j * 16) + i);
-                    std::printf("\033[%d;%dm%3d\033[0m", f, b, val);
-                    std::printf("|");
+                    //int val = ((j * 16) + i);
+                    std::printf("\033[%d;%dm%2d;%-3d\033[0m|", f, b, f, b);
                 }
                 std::printf("\n");
             }
@@ -276,13 +283,26 @@ void ConsoleDisplay::allColours()
     }
 }
 
-std::ostream& ConsoleDisplay::winCol(uint32_t fore, uint32_t back, std::string text, std::ostream& os, bool restore /*= true*/)
+std::ostream& ConsoleDisplay::winCol(eColours  fore, eColours  back, std::string text, std::ostream& os, bool restore /*= true*/)
 {
+    std::string fname("[" __FUNCTION__ "]");
 #ifdef _MSC_VER
     HANDLE hConsole = INVALID_HANDLE_VALUE;
     if (ms_isWindowsConsole && ms_usingColour)
     {
-        WORD val = WORD(back + fore);
+        uint32_t f(GetColValue(fore, true));
+        uint32_t b(GetBGColValue(back, true));
+        std::cerr << fname << " -> fore [" << f << "], back [" << b << "]" << std::endl;
+        WORD val = 0;
+        if (f != NO_COL)
+        {
+            val += static_cast<WORD>(f);
+        }
+        if (b != NO_COL)
+        {
+            val += static_cast<WORD>(b);
+        }
+        std::cerr << fname << " -> attribVal [" << val << "]" << std::endl;
         hConsole = getStdHandle(os);
         if (hConsole != INVALID_HANDLE_VALUE)
         {
@@ -292,28 +312,43 @@ std::ostream& ConsoleDisplay::winCol(uint32_t fore, uint32_t back, std::string t
 #endif
     os << text;
 #ifdef _MSC_VER
-    if (restore && ms_isWindowsConsole && ms_usingColour && (hConsole != INVALID_HANDLE_VALUE))
+    if (restore)// && ms_isWindowsConsole && ms_usingColour && (hConsole != INVALID_HANDLE_VALUE))
     {
-        SetConsoleTextAttribute(hConsole, ms_defaultAttr);
+        //SetConsoleTextAttribute(hConsole, ms_defaultAttr);
+        reset(os);
     }
 #endif
 
     return os;
 }
 
-std::ostream& ConsoleDisplay::colText(uint32_t fore, uint32_t back, std::string text, std::ostream& os,
+std::ostream& ConsoleDisplay::ansiCol(eColours fore, eColours back, std::string text, std::ostream& os, bool restore /*= true*/)
+{
+    std::string fname("[" __FUNCTION__ "]");
+
+    uint32_t f(GetColValue(fore, false));
+    uint32_t b(GetBGColValue(back, false));
+
+    std::cerr << fname << " - f [], b []" << std::endl;
+    if (ms_usingColour)
+    {
+    }
+    return os;
+}
+
+std::ostream& ConsoleDisplay::colText(eColours  fore, eColours  back, std::string text, std::ostream& os,
     bool restore /*= true*/, bool isWin /*= ms_isWindowsConsole*/)
 {
-    uint32_t f = GetColValue(fore, isWin);
-    uint32_t b = GetBGColValue(back, isWin);
-
+    std::cerr << "[" << __FUNCTION__ << "] -> fore [" << fore << ": " << ColourStr(fore) << 
+        "], back [" << back << ": " << ColourStr(back) << "]" << std::endl;
+ 
     if (isWin)
     {
         return winCol(fore, back, text, os, restore);
     }
     else
     {
-        return os;
+        return ansiCol(fore, back, text, os, restore);
     }
 
 }
@@ -372,7 +407,7 @@ std::string ConsoleDisplay::getEnvVar(std::string var)
             getenv_s(&requiredSize, NULL, 0, var.c_str());
             if (requiredSize == 0)
             {
-                std::cerr << "Environmanet var [" << var.c_str() << "] doesn't exist!" << std::endl;
+                std::cerr << "Environment var [" << var.c_str() << "] doesn't exist!" << std::endl;
                 return env;
             }
 

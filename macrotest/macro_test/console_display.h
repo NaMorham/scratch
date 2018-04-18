@@ -30,7 +30,17 @@ public:
         White,
 
         NUM_COLOURS,
-        Bold = 32
+
+        B_Black = NUM_COLOURS,
+        B_Red,
+        B_Green,
+        B_Yellow,
+        B_Blue,
+        B_Magenta,
+        B_Cyan,
+        B_White,
+
+        NUM_TOTAL_COLOURS
     };
 
     struct ColLookup_t
@@ -43,26 +53,24 @@ public:
         };
     };
 
-    static const uint32_t COL_MASK = 0xf;
-    static const uint32_t FLAG_MASK = 0xfff0;
     static const uint32_t NO_COL = static_cast<uint32_t>(-1);
 
-    inline static bool isBold(uint32_t val) { return ((val & FLAG_MASK) != 0); }
+    inline static bool isBold(eColours val) { return (val >= B_Black); }
 
-    static std::string ColourStr(uint32_t col);
+    static std::string ColourStr(eColours col);
 
-    static uint32_t GetColValue(uint32_t col, bool isWin = ms_isWindowsConsole);
+    static uint32_t GetColValue(eColours col, bool isWin = ms_isWindowsConsole);
 
-    static uint32_t GetBGColValue(uint32_t col, bool isWin = ms_isWindowsConsole);
+    static uint32_t GetBGColValue(eColours col, bool isWin = ms_isWindowsConsole);
 
-    static std::ostream& colText(std::string text, std::ostream& os,
-        uint32_t fore = None, uint32_t back = None, bool isWin = ms_isWindowsConsole);
+    //static std::ostream& colText(std::string text, std::ostream& os,
+        //uint32_t fore = None, uint32_t back = None, bool isWin = ms_isWindowsConsole);
 
     static ConsoleDisplay& get();
 
     static void allColours();
 
-    static std::ostream& colText(uint32_t fore, uint32_t back, std::string text, std::ostream& os,
+    static std::ostream& colText(eColours fore, eColours back, std::string text, std::ostream& os,
         bool restore = true, bool isWin = ms_isWindowsConsole);
 
     static void printLastError();
@@ -124,7 +132,8 @@ private:
     static bool ms_isWindowsConsole;
 
     static HANDLE getStdHandle(std::ostream&os);
-    static std::ostream& winCol(uint32_t fore, uint32_t back, std::string text, std::ostream& os, bool restore = true);
+    static std::ostream& winCol(eColours fore, eColours back, std::string text, std::ostream& os, bool restore = true);
+    static std::ostream& ansiCol(eColours fore, eColours back, std::string text, std::ostream& os, bool restore = true);
 
     static void InitDefaultAttr();
 

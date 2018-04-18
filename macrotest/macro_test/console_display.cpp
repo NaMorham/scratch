@@ -38,14 +38,19 @@ std::string ConsoleDisplay::ColourStr(eColours col)
         "Blue",
         "Magenta",
         "Cyan",
-        "White"
+        "White",
+
+        "Bold Black",
+        "Bold Red",
+        "Bold Green",
+        "Bold Yellow",
+        "Bold Blue",
+        "Bold Magenta",
+        "Bold Cyan",
+        "Bold White"
     };
     
-    std::string result(isBold(col) ? "Bold " : "");
-    eColours rawCol = static_cast<eColours>(col - B_Black);
-    if (rawCol < 0)
-        rawCol = None;
-    return result.append(rawCol > White ? std::string("Unk") : colStr[rawCol]);
+    return std::string((col > B_White) || (col < None) ? "Unk" : colStr[col]);
 }
 
 uint32_t ConsoleDisplay::GetColValue(eColours col, bool isWin /*= ms_isWindowsConsole*/)
@@ -184,7 +189,7 @@ void ConsoleDisplay::allColours()
     {
         if (ms_isWindowsConsole)
         {
-            std::cerr << fname << " Render as a windows console" << std::endl;
+            //std::cerr << fname << " Render as a windows console" << std::endl;
 #ifdef _MSC_VER
             int i, j;
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -292,7 +297,7 @@ std::ostream& ConsoleDisplay::winCol(eColours  fore, eColours  back, std::string
     {
         uint32_t f(GetColValue(fore, true));
         uint32_t b(GetBGColValue(back, true));
-        std::cerr << fname << " -> fore [" << f << "], back [" << b << "]" << std::endl;
+        //std::cerr << fname << " -> fore [" << f << "], back [" << b << "]" << std::endl;
         WORD val = 0;
         if (f != NO_COL)
         {
@@ -302,7 +307,7 @@ std::ostream& ConsoleDisplay::winCol(eColours  fore, eColours  back, std::string
         {
             val += static_cast<WORD>(b);
         }
-        std::cerr << fname << " -> attribVal [" << val << "]" << std::endl;
+        //std::cerr << fname << " -> attribVal [" << val << "]" << std::endl;
         hConsole = getStdHandle(os);
         if (hConsole != INVALID_HANDLE_VALUE)
         {
@@ -329,9 +334,22 @@ std::ostream& ConsoleDisplay::ansiCol(eColours fore, eColours back, std::string 
     uint32_t f(GetColValue(fore, false));
     uint32_t b(GetBGColValue(back, false));
 
-    std::cerr << fname << " - f [], b []" << std::endl;
-    if (ms_usingColour)
+    //std::cerr << fname << " - f [], b []" << std::endl;
+    if (ms_usingColour && ms_usingANSI)
     {
+        if (f != NO_COL)
+        {
+            os << std::string("\033[").append(std::to_string(f)).append("m");
+        }
+        if (b != NO_COL)
+        {
+            os << std::string("\033[").append(std::to_string(b)).append("m");
+        }
+    }
+    os << text;
+    if (restore && ms_usingColour && ms_usingANSI)
+    {
+        reset(os);
     }
     return os;
 }
@@ -339,8 +357,8 @@ std::ostream& ConsoleDisplay::ansiCol(eColours fore, eColours back, std::string 
 std::ostream& ConsoleDisplay::colText(eColours  fore, eColours  back, std::string text, std::ostream& os,
     bool restore /*= true*/, bool isWin /*= ms_isWindowsConsole*/)
 {
-    std::cerr << "[" << __FUNCTION__ << "] -> fore [" << fore << ": " << ColourStr(fore) << 
-        "], back [" << back << ": " << ColourStr(back) << "]" << std::endl;
+    //std::cerr << "[" << __FUNCTION__ << "] -> fore [" << fore << ": " << ColourStr(fore) << 
+    //    "], back [" << back << ": " << ColourStr(back) << "]" << std::endl;
  
     if (isWin)
     {
@@ -487,6 +505,33 @@ void ConsoleDisplay::InitDefaultAttr()
 #else
     ms_defaultAttr = 0;
 #endif
+
+    if (ms_usingColour)
+    {
+        ConsoleDisplay::NRM = _on_NRM;
+        ConsoleDisplay::BLD = _on_BLD;
+        ConsoleDisplay::BLK = _on_BLK;
+        ConsoleDisplay::RED = _on_RED;
+        ConsoleDisplay::GRN = _on_GRN;
+        ConsoleDisplay::YRL = _on_YRL;
+        ConsoleDisplay::BLU = _on_BLU;
+        ConsoleDisplay::MAG = _on_MAG;
+        ConsoleDisplay::CYN = _on_CYN;
+        ConsoleDisplay::WHT = _on_WHT;
+    }
+    else
+    {
+        ConsoleDisplay::NRM = _off_NRM;
+        ConsoleDisplay::BLD = _off_BLD;
+        ConsoleDisplay::BLK = _off_BLK;
+        ConsoleDisplay::RED = _off_RED;
+        ConsoleDisplay::GRN = _off_GRN;
+        ConsoleDisplay::YRL = _off_YRL;
+        ConsoleDisplay::BLU = _off_BLU;
+        ConsoleDisplay::MAG = _off_MAG;
+        ConsoleDisplay::CYN = _off_CYN;
+        ConsoleDisplay::WHT = _off_WHT;
+    }
 }
 
 std::ostream& ConsoleDisplay::reset(std::ostream& os, bool isWin /*= ConsoleDisplay::ms_isWindowsConsole*/)
@@ -494,17 +539,23 @@ std::ostream& ConsoleDisplay::reset(std::ostream& os, bool isWin /*= ConsoleDisp
     if (isWin)
     {
 #ifdef _MSC_VER
-        HANDLE hConsole = getStdHandle(os);
-
-        if (hConsole != INVALID_HANDLE_VALUE)
+        if (ms_isWindowsConsole)
         {
-            SetConsoleTextAttribute(hConsole, ms_defaultAttr);
+            HANDLE hConsole = getStdHandle(os);
+
+            if (hConsole != INVALID_HANDLE_VALUE)
+            {
+                SetConsoleTextAttribute(hConsole, ms_defaultAttr);
+            }
         }
 #endif
     }
     else
     {
-        os << NRM;
+        if (ms_usingANSI)
+        {
+            os << _on_NRM;
+        }
     }
     return os;
 }

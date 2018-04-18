@@ -310,7 +310,7 @@ int main(int argc, char ** argv, char **env)
 
     //foo << "Display all colour values" << Foo::endl;
 
-    //ConsoleDisplay::allColours();
+    ConsoleDisplay::allColours();
 
     foo << "Test colour string evaluation" << Foo::endl;
 

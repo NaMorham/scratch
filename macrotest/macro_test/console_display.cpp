@@ -17,14 +17,14 @@ ConsoleDisplay::ColLookup_t lookup[ConsoleDisplay::NUM_TOTAL_COLOURS] = {
     ConsoleDisplay::ColLookup_t(36, 3),  // Cyan
     ConsoleDisplay::ColLookup_t(37, 7),  // White
     // BOLD colours
-    ConsoleDisplay::ColLookup_t(40, 8),  // B_Black
-    ConsoleDisplay::ColLookup_t(41, 12), // B_Red
-    ConsoleDisplay::ColLookup_t(42, 10), // B_Green
-    ConsoleDisplay::ColLookup_t(43, 14), // B_Yellow
-    ConsoleDisplay::ColLookup_t(44, 9),  // B_Blue
-    ConsoleDisplay::ColLookup_t(45, 13), // B_Magenta
-    ConsoleDisplay::ColLookup_t(46, 11), // B_Cyan
-    ConsoleDisplay::ColLookup_t(47, 15)  // B_White
+    ConsoleDisplay::ColLookup_t(90, 8),  // B_Black
+    ConsoleDisplay::ColLookup_t(91, 12), // B_Red
+    ConsoleDisplay::ColLookup_t(92, 10), // B_Green
+    ConsoleDisplay::ColLookup_t(93, 14), // B_Yellow
+    ConsoleDisplay::ColLookup_t(94, 9),  // B_Blue
+    ConsoleDisplay::ColLookup_t(95, 13), // B_Magenta
+    ConsoleDisplay::ColLookup_t(96, 11), // B_Cyan
+    ConsoleDisplay::ColLookup_t(97, 15)  // B_White
 };
 
 std::string ConsoleDisplay::ColourStr(eColours col)
@@ -274,14 +274,18 @@ void ConsoleDisplay::allColours()
                         b += 60;
                     }
                     //int val = ((j * 16) + i);
-                    std::printf("\033[%d;%dm%2d;%-3d\033[0m|", f, b, f, b);
+                    std::printf("\033[%dm", f);
+                    std::printf("\033[%dm", b);
+                    std::printf("%2d;%-3d", f, b);
+                    std::printf("\033[0m");
+                    std::printf("|");
                 }
                 std::printf("\n");
             }
             std::printf("---+");
             for (i = 0; i < 16; i++)
             {
-                std::printf("---+");
+                std::printf("------+");
             }
             std::printf("\n");
         }
@@ -390,20 +394,22 @@ std::string ConsoleDisplay::GetLastErrorText(uint32_t err)
     LPVOID lpMsgBuf = nullptr;
     DWORD dw = static_cast<DWORD>(err);
 
-    FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPSTR)&lpMsgBuf,
-        0, NULL);
+    //FormatMessageA(
+    //    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    //    FORMAT_MESSAGE_FROM_SYSTEM |
+    //    FORMAT_MESSAGE_IGNORE_INSERTS,
+    //    NULL,
+    //    dw,
+    //    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    //    (LPSTR)&lpMsgBuf,
+    //    0, NULL);
 
     // Display the error message and exit the process
+    static char *dmmy = "hmm";
+    lpMsgBuf = dmmy;
     msg.assign(reinterpret_cast<const char*>(lpMsgBuf));
 
-    LocalFree(lpMsgBuf);
+    //LocalFree(lpMsgBuf);
 #else
     msg.assign("Error:").append(std::to_string(err));
 #endif

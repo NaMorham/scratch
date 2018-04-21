@@ -193,7 +193,7 @@ void ConsoleDisplay::allColours()
 #ifdef _MSC_VER
             int i, j;
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (GetLastError() == ERROR_INVALID_HANDLE)
+            if (GetLastError() != ERROR_SUCCESS)
             {
                 std::cerr << fname << " Could not get stdout handle" << std::endl;
                 ms_isWindowsConsole = false;
@@ -379,7 +379,7 @@ std::ostream& ConsoleDisplay::colText(eColours  fore, eColours  back, std::strin
 void ConsoleDisplay::printLastError()
 {
     uint32_t err = GetLastError();
-    if (err != 0)
+    if (err != ERROR_SUCCESS)
     {
         std::cerr << GetLastErrorText(err) << std::endl;
     }
@@ -394,22 +394,21 @@ std::string ConsoleDisplay::GetLastErrorText(uint32_t err)
     LPVOID lpMsgBuf = nullptr;
     DWORD dw = static_cast<DWORD>(err);
 
-    //FormatMessageA(
-    //    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-    //    FORMAT_MESSAGE_FROM_SYSTEM |
-    //    FORMAT_MESSAGE_IGNORE_INSERTS,
-    //    NULL,
-    //    dw,
-    //    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    //    (LPSTR)&lpMsgBuf,
-    //    0, NULL);
+    FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&lpMsgBuf,
+        0, NULL);
 
     // Display the error message and exit the process
-    static char *dmmy = "hmm";
-    lpMsgBuf = dmmy;
     msg.assign(reinterpret_cast<const char*>(lpMsgBuf));
 
-    //LocalFree(lpMsgBuf);
+    LocalFree(lpMsgBuf);
+    //msg.assign("Error:").append(std::to_string(err)); 
 #else
     msg.assign("Error:").append(std::to_string(err));
 #endif
@@ -481,6 +480,12 @@ HANDLE ConsoleDisplay::getStdHandle(std::ostream& os)
         hStd = GetStdHandle(STD_ERROR_HANDLE);
     }
 
+    if (GetLastError() != ERROR_SUCCESS)
+    {
+        printLastError();
+        hStd = INVALID_HANDLE_VALUE;
+    }
+
     return hStd;
 }
 
@@ -491,9 +496,10 @@ void ConsoleDisplay::InitDefaultAttr()
     {
         CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
         HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-        if (hStdout == INVALID_HANDLE_VALUE)
+        DWORD err = GetLastError();
+        if ((hStdout == INVALID_HANDLE_VALUE) || (err != ERROR_SUCCESS))
         {
+            printLastError();
             return;
         }
 
@@ -549,7 +555,7 @@ std::ostream& ConsoleDisplay::reset(std::ostream& os, bool isWin /*= ConsoleDisp
         {
             HANDLE hConsole = getStdHandle(os);
 
-            if (hConsole != INVALID_HANDLE_VALUE)
+            if (hConsole == ERROR_SUCCESS)
             {
                 SetConsoleTextAttribute(hConsole, ms_defaultAttr);
             }

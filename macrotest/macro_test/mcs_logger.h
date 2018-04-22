@@ -8,7 +8,8 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-
+#include <map>
+#include <memory>
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -109,20 +110,52 @@ public:
 
     virtual ~ILogWriter() {}
 
+    bool init() { m_isInitialised = doInit(); }
+    void finalise() { doFinalise(); m_isInitialised = false; }
+
+    std::string name() const { return m_writerName; }
+    
+    virtual bool doInit() = 0;
+    virtual void doFinalise() = 0;
     virtual void write(std::string funcName, const eLogLevels eLevel, std::string msg) = 0;
 
 private:
+    bool m_isInitialised;
     std::string m_writerName;
 };
+
+typedef std::map<std::string, std::shared_ptr<ILogWriter>> WriterMap;
 
 // Log system gives a logger to a method
 // manages the log writers
 class LogSystem
 {
 public:
+    LogSystem() {}
+    virtual ~LogSystem() {}
+
     friend class Logger;
 
+    bool registerWriter(std::shared_ptr<ILogWriter> pWriter)
+    {
+        if (pWriter == nullptr)
+        {
+            // TODO
+        }
+        else
+        {
+            if (m_writers.count(pWriter->name()))
+            {
+                m_writers.insert(std::pair<std::string, std::shared_ptr<ILogWriter>>(pWriter->name(), pWriter));
+            }
+        }
+        return false;
+    }
+
+private:
+    WriterMap m_writers;
 };
+
 #endif
 
 #endif // __MCS__MACRO_TEST__MCS_LOGGER_H__ 

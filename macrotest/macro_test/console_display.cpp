@@ -72,33 +72,10 @@ uint32_t ConsoleDisplay::GetBGColValue(eColours col, bool isWin /*= ms_isWindows
     return (result == NO_COL ? result : (isWin ? result * 16 : result + 10));
 }
 
-//std::ostream& ConsoleDisplay::colText(std::string text, std::ostream& os,
-//    uint32_t fore /*= ConsoleDisplay::eNone*/, uint32_t back /*= ConsoleDisplay::eNone*/, bool isWin /*= ms_isWindowsConsole*/)
-//{
-//    if (isWin)
-//    {
-//        HANDLE hStd = getStdHandle(os);
-//        if (ms_usingColour && (hStd != INVALID_HANDLE_VALUE))
-//        {
-//        }
-//        os << text;
-//        if (ms_usingColour && (hStd != INVALID_HANDLE_VALUE))
-//        {
-//        }
-//    }
-//    else
-//    {
-//        os << text;
-//    }
-//    return os;
-//}
-
 ConsoleDisplay::ConsoleDisplay()
 {
     std::cerr << "[ConsoleDisplay] Created" << std::endl;
 #ifdef _MSC_VER
-    //HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    //ms_isWindowsConsole = (INVALID_HANDLE_VALUE == hConsole);
     if (getEnvVar("SHELL").empty())
     {
         ms_usingANSI = false;
@@ -126,24 +103,11 @@ ConsoleDisplay::~ConsoleDisplay()
     std::cerr << "[ConsoleDisplay] Destroyed ConsoleDisplay" << std::endl;
 }
 
-/*
-PConsoleDisplay ConsoleDisplay::get()
-{
-    if (ms_pConsole == nullptr)
-    {
-        ms_pConsole = std::make_shared<ConsoleDisplay*>();
-    }
-    return ms_pConsole;
-}
-
-PConsoleDisplay ConsoleDisplay::ms_pConsole = nullptr;
-/*/
 ConsoleDisplay& ConsoleDisplay::get()
 {
     static ConsoleDisplay theConsole;
     return theConsole;
 }
-//*/
 
 bool ConsoleDisplay::ms_usingColour = true;
 bool ConsoleDisplay::ms_usingANSI = false;
@@ -240,7 +204,7 @@ std::ostream& ConsoleDisplay::allColoursWin(HANDLE hCurConsole, std::ostream& os
             SetConsoleTextAttribute(hCurConsole, 7);
             printLastError();
 #endif
-            os << std::setw(2) << i << "|";
+            os << std::setw(2) << i << " |";
             for (j = 0; j < 16; j++)
             {
                 WORD val = static_cast<WORD>((j * 16) + i);
@@ -278,10 +242,17 @@ std::ostream& ConsoleDisplay::allColoursAnsi(std::ostream& os)
 
     if (os.good())
     {
+        os << "---+";
+        for (i = 0; i < 16; i++)  // for each column
+        {
+            os << "------+";
+        }
+        os << std::endl;
+
         os << std::endl << "i\\j|";
         for (i = 0; i < 16; i++)
         {
-            os << " " << std::setw(3) << i + (i >= 8 ? 92 : 40);
+            os << "  " << std::setw(3) << i + (i >= 8 ? 92 : 40) << " |";
         }
         os << std::endl;
 
@@ -406,9 +377,6 @@ std::ostream& ConsoleDisplay::colText(eColours  fore, std::string text, std::ost
 std::ostream& ConsoleDisplay::colText(eColours  fore, eColours  back, std::string text, std::ostream& os,
     bool restore /*= true*/, bool isWin /*= ms_isWindowsConsole*/)
 {
-    //std::cerr << "[" << __FUNCTION__ << "] -> fore [" << fore << ": " << ColourStr(fore) << 
-    //    "], back [" << back << ": " << ColourStr(back) << "]" << std::endl;
- 
     if (isWin)
     {
         return winCol(fore, back, text, os, getStdHandle(os), restore);
@@ -518,7 +486,6 @@ std::string ConsoleDisplay::GetLastErrorText(uint32_t err)
     msg.assign(reinterpret_cast<const char*>(lpMsgBuf));
 
     LocalFree(lpMsgBuf);
-    //msg.assign("Error:").append(std::to_string(err)); 
 #else
     msg.assign("Error:").append(std::to_string(err));
 #endif

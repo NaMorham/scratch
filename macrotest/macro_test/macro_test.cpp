@@ -7,48 +7,6 @@
 
 #include "test_method_base.h"
 
-#if 0
-#ifdef _MSC_VER
-#include <windows.h>
-uint32_t millis()
-{
-    SYSTEMTIME time;
-    GetSystemTime(&time);
-    return static_cast<uint32_t>(time.wMilliseconds - (time.wMilliseconds / 1000));
-}
-#else
-#include <sys/time.h>
-uint32_t millis()
-{
-    timeval time;
-    gettimeofday(&time, NULL);
-    return static_cast<uint32_t>((time.tv_sec * 1000) + (time.tv_usec / 1000));
-}
-#endif
-
-std::string utc_now()
-{
-    std::stringstream ss;
-
-    std::time_t t = std::time(nullptr);
-#ifdef _MSC_VER
-    std::tm t2;
-    errno_t err = gmtime_s(&t2, &t);
-    if (err == 0)
-    {
-        ss << std::put_time(&t2, "%Y-%m-%d %H:%M:%S.") << std::setw(3) << std::setfill('0') << millis();
-    }
-    else
-    {
-        ss << "0000-00-00 00:00:00." << std::setw(3) << std::setfill('0') << millis();
-    }
-#else
-    ss << std::put_time(std::gmtime(&t), "%Y-%m-%d %H:%M:%S.") << std::setw(3) << std::setfill('0') << millis();
-#endif
-    return ss.str();
-}
-#endif // utc_now
-
 class Test1 : public TestMethodBase
 {
 public:
@@ -78,10 +36,9 @@ private:
 
 void ColTest(ConsoleDisplay::eColours val)
 {
-    ConsoleDisplay::colText(ConsoleDisplay::eYellow, "Test [", std::cerr, true);
-    std::cerr /*<< std::setw(12)*/ << ConsoleDisplay::ColourStr(val);
-    ConsoleDisplay::colText(ConsoleDisplay::eYellow, "]", std::cerr, true);
-    std::cerr << std::endl;
+    /*
+    std::cerr << ConsoleDisplay::Yellow("Test [") << ConsoleDisplay::ColourStr(val)
+        << ConsoleDisplay::Yellow("]") << std::endl;
 
     ConsoleDisplay::colText(ConsoleDisplay::eYellow, "\t - fore [", std::cerr);
     std::cerr << " win : " << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, true)) <<
@@ -98,10 +55,48 @@ void ColTest(ConsoleDisplay::eColours val)
     std::cerr << " , ";
     ConsoleDisplay::colText(ConsoleDisplay::eWhite, val, "**", std::cerr, true, false);
     std::cerr << "]" << std::endl;
+    /*/
+    std::cerr << ConsoleDisplay::Yellow("| ") << std::setw(17) << " " << ConsoleDisplay::Yellow(" |")
+        << " fg " << ConsoleDisplay::Yellow("|  ") << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, true))
+        << ConsoleDisplay::Yellow(" |  ") << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, false))
+        << ConsoleDisplay::Yellow("  | ");
+    ConsoleDisplay::colText(val, "****", std::cerr, true, true);
+    std::cerr << ConsoleDisplay::Yellow(" | ");
+    ConsoleDisplay::colText(val, "****", std::cerr, true, false);
+    std::cerr << ConsoleDisplay::Yellow(" | ") << std::endl;
+    
+    std::cerr << ConsoleDisplay::Yellow("| ") << std::setw(12) << ConsoleDisplay::ColourStr(val)
+        << ConsoleDisplay::Yellow(" : ") << std::setw(2) << val
+        << ConsoleDisplay::Yellow(" +----+------+-------+------+------+") << std::endl;
+
+    std::cerr << ConsoleDisplay::Yellow("| ") << std::setw(17) << " " << ConsoleDisplay::Yellow(" |")
+        << " bg " << ConsoleDisplay::Yellow("|  ") << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, true))
+        << ConsoleDisplay::Yellow(" |  ") << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, false))
+        << ConsoleDisplay::Yellow("  | ");
+    ConsoleDisplay::colText(ConsoleDisplay::eNone, val, "****", std::cerr, true, true);
+    std::cerr << ConsoleDisplay::Yellow(" | ");
+    ConsoleDisplay::colText(ConsoleDisplay::eNone, val, "****", std::cerr, true, false);
+    std::cerr << ConsoleDisplay::Yellow(" | ") << std::endl;
+    
+    std::cerr <<
+        ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
+    //*/
 }
 
 void lookupTests()
 {
+    std::cerr << std::endl <<
+        ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
+
+    std::cerr << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White("        Test       ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White(" ## ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" win# ")
+        << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi# ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White("  win ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi ")
+        << ConsoleDisplay::Yellow("|") << std::endl;
+
+    std::cerr <<
+        ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
+    //                          |         Blue :  5 | fg |  111 |  222  | **** | **** |
     ColTest(ConsoleDisplay::eNone);
     ColTest(ConsoleDisplay::eBlack);
     ColTest(ConsoleDisplay::eRed);
@@ -112,8 +107,18 @@ void lookupTests()
     ColTest(ConsoleDisplay::eCyan);
     ColTest(ConsoleDisplay::eWhite);
 
-    std::cerr << std::endl;
+    //std::cerr << std::endl <<
+    //    ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
 
+    std::cerr << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White("        Test       ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White(" ## ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" win# ")
+        << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi# ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White("  win ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi ")
+        << ConsoleDisplay::Yellow("|") << std::endl;
+
+    std::cerr <<
+        ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
+    //                          | Bold Magenta : 14 | fg |  111 |  222  | **** | **** |
     ColTest(ConsoleDisplay::eB_Black);
     ColTest(ConsoleDisplay::eB_Red);
     ColTest(ConsoleDisplay::eB_Green);
@@ -123,254 +128,17 @@ void lookupTests()
     ColTest(ConsoleDisplay::eB_Cyan);
     ColTest(ConsoleDisplay::eB_White);
 
+    std::cerr << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White("        Test       ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White(" ## ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" win# ")
+        << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi# ") << ConsoleDisplay::Yellow("|")
+        << ConsoleDisplay::B_White("  win ") << ConsoleDisplay::Yellow("|") << ConsoleDisplay::B_White(" ansi ")
+        << ConsoleDisplay::Yellow("|") << std::endl;
+
+    std::cerr <<
+        ConsoleDisplay::Yellow("+-------------------+----+------+-------+------+------+") << std::endl;
+
     std::cerr << std::endl;
-
-    //ColTest(11);  // should ccause commpile errors
-    //ColTest(27);
-
-    //std::cerr << std::endl;
 }
-
-#if 0
-#define FOO(fname)  Foo foo(fname, __FUNCTION__)
-
-// __FOO_USE_STD_STRING__    // use std:;string instead of a string stream to marshall data
-// __FOO_USE_STD_OFSTREAM__  // use std::ofstream instead of a FILE pointer
-
-class Foo
-{
-public:
-    enum eMarker
-    {
-        endOfLine,
-        flushLine
-    };
-
-    Foo(std::string fname, std::string name) : m_fname(fname), m_name(name), m_newline(true)
-    {
-#ifdef __FOO_USE_STD_OFSTREAM__
-        //m_file.open(fname, std::ios::app);
-        m_file.open(fname);
-        if (m_file.good())
-        {
-            doNewLine();
-#ifdef __FOO_USE_STD_STRING__
-            m_line.append("Begin function");
-#else
-            m_line << "Begin function";
-#endif
-            doEndLine();
-        }
-#else
-#endif
-    }
-
-    virtual ~Foo()
-    {
-#ifdef __FOO_USE_STD_OFSTREAM__
-        if (m_file.good())
-        {
-            doFlush();
-            doNewLine();
-#ifdef __FOO_USE_STD_STRING__
-            m_line.append("End function");
-#else
-            m_line << "End function";
-#endif
-            doEndLine();
-            m_file.close();
-        }
-#else
-#endif
-    }
-
-    friend std::ostream& operator<<(const Foo& foo, std::ostream& os);
-
-    std::string name() const { return m_name; }
-
-#ifdef __FOO_USE_STD_STRING__
-    std::string str() const { return m_line; }
-#else
-    std::string str() const { return m_line.str(); }
-#endif
-    operator const std::string() const { return this->str(); }
-
-#ifdef __FOO_USE_STD_OFSTREAM__
-    std::ofstream& file() { return m_file; }
-#else
-#endif
-
-    //Foo& clear() { m_line.str(""); m_newline = true; return *this; }
-    Foo& clear() { m_line.clear(); m_newline = true; return *this; }
-
-    template<class T>
-    void write(T const& val)
-    {
-        if (typeid(val).hash_code() == typeid(Foo::endOfLine).hash_code())
-        {
-            doEndLine();
-        }
-        else
-        {
-            if (m_line.good())
-            {
-                if (m_newline)
-                {
-                    prefixLine();
-                }
-#ifdef __FOO_USE_STD_STRING__
-                m_line.append(std::to_string(val));
-#else
-                m_line << val;
-#endif
-            }
-        }
-    }
-
-    template<eMarker T>
-    Foo& operator<<(eMarker& marker)
-    {
-        switch (marker)
-        {
-        case Foo::endOfLine:
-            this->doEndLine();
-            break;
-
-        case Foo::flushLine:
-            this->doFlush();
-            break;
-
-        default:
-            int unhandled = 42;
-        };
-        return *this;
-    }
-
-    //Foo& operator<<(std::ostream&(*f)(std::ostream&))
-    //{
-
-    //    return *this;
-    //}
-
-    template<class T>
-    Foo& operator<<(T const& val)
-    {
-        write(val);
-
-        return *this;
-    }
-
-private:
-    void persistLine()
-    {
-#ifdef __FOO_USE_STD_OFSTREAM__
-        std::ofstream of(m_fname, ios::app);
-        if (of.good())
-        {
-            of << this->str();
-            of.close();
-        }
-#else
-#if _MSC_VER < 1900
-        FILE* f = nullptr;
-        errno_t eno = fopen_s(&f, m_fname.c_str(), "at");
-        if ((f != nullptr) && (eno != ERROR_SUCCESS))
-#else
-        FILE *f = std::fopen(m_fname.c_str(), "at");
-        if (f != nullptr)
-#endif
-        {
-            std::fprintf(f, this->str().c_str());
-            std::fflush(f);
-            std::fclose(f);
-            f = nullptr;
-        }
-#endif
-        else
-        {
-            std::cerr << this->str();
-            std::cerr.flush();
-        }
-    }
-
-    void prefixLine()
-    {
-        ++ms_counter;
-        m_newline = false;
-#ifdef __FOO_USE_STD_STRING__
-        m_line.clear();
-        m_line.append("[").append(m_name).append("][").append(utc_now()).append("][").append(std::to_string(ms_counter)).append("] ");
-#else
-        m_line.str("");
-        m_line << "[" << m_name << "][" << utc_now() << "][" << std::setw(16) << std::setfill('0') << ms_counter << "] ";
-#endif
-    }
-
-    void doEndLine()
-    {
-#ifdef __FOO_USE_STD_STRING__
-        m_line << m_line << std::endl;
-#else
-        m_line << std::endl;
-        m_line.str("");
-#endif
-        persistLine();
-        clear();
-    }
-
-    void doFlush()
-    {
-#ifdef __FOO_USE_STD_OFSTREAM__
-        if (m_file.good())
-        {
-#ifdef __FOO_USE_STD_STRING__
-            m_file << m_line << std::fflush;
-            m_line.clear();
-#else
-            //m_file << m_line.str() << std::flush;
-            //m_line.str("");
-#endif
-            m_newline = true;
-        }
-#else
-#endif
-    }
-
-    std::string m_name;
-#ifdef __FOO_USE_STD_STRING__
-    std::string m_line;
-#else
-    std::stringstream m_line;
-#endif
-#ifdef __FOO_USE_STD_OFSTREAM__
-    std::ofstream m_file;
-#else
-    std::string m_fname;
-#endif
-    bool m_newline;
-
-    static uint32_t ms_counter;
-};
-
-uint32_t Foo::ms_counter = 0ul;
-
-std::ostream& operator<<(const Foo& foo, std::ostream& os)
-{
-    os << foo.str();
-    return os;
-}
-#else
-//#define FOO(s)  std::cerr << s << std::endl
-//class Foo
-//{
-//public:
-//    enum eMarker
-//    {
-//        endOfLine = 42
-//    };
-//};
-//#define foo std::cerr << std::endl; std::cerr
-#endif // diable FOO class
 
 #if _MSC_VER >= 1900
 template<typename ...Args>
@@ -447,26 +215,16 @@ int main(int argc, char ** argv, char **env)
     //Foo foo("c:\\temp\\test.foo.log", __FUNCTION__);
     //foo << "Hello" << " " << "World" << Foo::endOfLine << 42 << Foo::endOfLine;
 
-    /*
-    std::cout << "Press <enter>:";
-    std::string val;
-    std::getline(std::cin, val, '\n');
-    /*/
     getString();
-    //*/
 
     //foo << "Set up the console" << Foo::endOfLine;
 
-    //PConsoleDisplay pConsole = ConsoleDisplay::get();
     ConsoleDisplay& theConsole = ConsoleDisplay::get();
 
     std::cerr << "Tests built: " << __DATE__ << ", " << __TIME__ << std::endl << std::endl;
 
     CONCAT_TEST("", "simple test 2", concat());
     CONCAT_TEST("Hello World", "simple test 1", concat("Hello", " ", "World"));
-
-    //Test1 t1("t1", "foo", "bar");
-    //std::cerr << t1 << std::endl;
 
     //foo << "Display all colour values" << Foo::endOfLine;
 
@@ -524,9 +282,9 @@ int main(int argc, char ** argv, char **env)
 
     //foo << "Run lookup tests" << Foo::endOfLine;
 
-    lookupTests();
+    //lookupTests();
 
-    getString("Test run complete, press <enter> to exit", std::cerr);
+    //getString("Test run complete, press <enter> to exit", std::cerr);
 
     return 0;
 }

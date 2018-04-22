@@ -1,3 +1,6 @@
+#ifndef __MCS__MACRO_TEST__TEST_METHOD_BASE_H__
+#define __MCS__MACRO_TEST__TEST_METHOD_BASE_H__ 
+
 #pragma once
 
 #include <string>
@@ -5,6 +8,7 @@
 #include <memory>
 
 #include "console_display.h"
+#include "mcs_logger.h"
 
 typedef bool(*pfnTestFunc)(std::string in, std::string expected);
 
@@ -68,3 +72,6 @@ private:
 std::ostream& operator<< (std::ostream& os, const TestMethodBase& tmb);
 
 typedef std::vector<std::shared_ptr<TestMethodBase>> MethodVec;
+
+#endif // __MCS__MACRO_TEST__TEST_METHOD_BASE_H__
+

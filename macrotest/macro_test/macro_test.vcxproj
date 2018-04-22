@@ -166,10 +166,12 @@
   <ItemGroup>
     <ClCompile Include="console_display.cpp" />
     <ClCompile Include="macro_test.cpp" />
+    <ClInclude Include="mcs_logger.cpp" />
     <ClCompile Include="test_method_base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console_display.h" />
+    <ClInclude Include="mcs_logger.h" />
     <ClInclude Include="test_method_base.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

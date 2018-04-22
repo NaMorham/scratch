@@ -7,6 +7,7 @@
 
 #include "test_method_base.h"
 
+#if 0
 #ifdef _MSC_VER
 #include <windows.h>
 uint32_t millis()
@@ -46,8 +47,7 @@ std::string utc_now()
 #endif
     return ss.str();
 }
-
-
+#endif // utc_now
 
 class Test1 : public TestMethodBase
 {
@@ -78,45 +78,50 @@ private:
 
 void ColTest(ConsoleDisplay::eColours val)
 {
-    std::cerr << "Test [" /*<< std::setw(12)*/ << ConsoleDisplay::ColourStr(val) << "]" << std::endl;
-    std::cerr << "\t - fore [ win : " << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, true)) <<
+    ConsoleDisplay::colText(ConsoleDisplay::eYellow, "Test [", std::cerr, true);
+    std::cerr /*<< std::setw(12)*/ << ConsoleDisplay::ColourStr(val);
+    ConsoleDisplay::colText(ConsoleDisplay::eYellow, "]", std::cerr, true);
+    std::cerr << std::endl;
+
+    ConsoleDisplay::colText(ConsoleDisplay::eYellow, "\t - fore [", std::cerr);
+    std::cerr << " win : " << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, true)) <<
         ", ansi : " << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetColValue(val, false)) << "] -> ["; 
-    ConsoleDisplay::colText(val, ConsoleDisplay::Black, "**", std::cerr, true, true);
+    ConsoleDisplay::colText(val, ConsoleDisplay::eBlack, "**", std::cerr, true, true);
     std::cerr << " , ";
-    ConsoleDisplay::colText(val, ConsoleDisplay::Black, "**", std::cerr, true, false);
+    ConsoleDisplay::colText(val, ConsoleDisplay::eBlack, "**", std::cerr, true, false);
     std::cerr << "]" << std::endl;
 
-    std::cerr << "\t - back [ win : ";
+    std::cerr << ConsoleDisplay::Yellow("\t - back [") << " win : ";
     std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, true)) << ", ansi : ";
     std::cerr << std::setw(3) << static_cast<int32_t>(ConsoleDisplay::GetBGColValue(val, false)) << "] -> [";
-    ConsoleDisplay::colText(ConsoleDisplay::White, val, "**", std::cerr, true, true);
+    ConsoleDisplay::colText(ConsoleDisplay::eWhite, val, "**", std::cerr, true, true);
     std::cerr << " , ";
-    ConsoleDisplay::colText(ConsoleDisplay::White, val, "**", std::cerr, true, false);
+    ConsoleDisplay::colText(ConsoleDisplay::eWhite, val, "**", std::cerr, true, false);
     std::cerr << "]" << std::endl;
 }
 
 void lookupTests()
 {
-    ColTest(ConsoleDisplay::None);
-    ColTest(ConsoleDisplay::Black);
-    ColTest(ConsoleDisplay::Red);
-    ColTest(ConsoleDisplay::Green);
-    ColTest(ConsoleDisplay::Yellow);
-    ColTest(ConsoleDisplay::Blue);
-    ColTest(ConsoleDisplay::Magenta);
-    ColTest(ConsoleDisplay::Cyan);
-    ColTest(ConsoleDisplay::White);
+    ColTest(ConsoleDisplay::eNone);
+    ColTest(ConsoleDisplay::eBlack);
+    ColTest(ConsoleDisplay::eRed);
+    ColTest(ConsoleDisplay::eGreen);
+    ColTest(ConsoleDisplay::eYellow);
+    ColTest(ConsoleDisplay::eBlue);
+    ColTest(ConsoleDisplay::eMagenta);
+    ColTest(ConsoleDisplay::eCyan);
+    ColTest(ConsoleDisplay::eWhite);
 
     std::cerr << std::endl;
 
-    ColTest(ConsoleDisplay::B_Black);
-    ColTest(ConsoleDisplay::B_Red);
-    ColTest(ConsoleDisplay::B_Green);
-    ColTest(ConsoleDisplay::B_Yellow);
-    ColTest(ConsoleDisplay::B_Blue);
-    ColTest(ConsoleDisplay::B_Magenta);
-    ColTest(ConsoleDisplay::B_Cyan);
-    ColTest(ConsoleDisplay::B_White);
+    ColTest(ConsoleDisplay::eB_Black);
+    ColTest(ConsoleDisplay::eB_Red);
+    ColTest(ConsoleDisplay::eB_Green);
+    ColTest(ConsoleDisplay::eB_Yellow);
+    ColTest(ConsoleDisplay::eB_Blue);
+    ColTest(ConsoleDisplay::eB_Magenta);
+    ColTest(ConsoleDisplay::eB_Cyan);
+    ColTest(ConsoleDisplay::eB_White);
 
     std::cerr << std::endl;
 
@@ -126,6 +131,7 @@ void lookupTests()
     //std::cerr << std::endl;
 }
 
+#if 0
 #define FOO(fname)  Foo foo(fname, __FUNCTION__)
 
 // __FOO_USE_STD_STRING__    // use std:;string instead of a string stream to marshall data
@@ -265,8 +271,14 @@ private:
             of.close();
         }
 #else
+#if _MSC_VER < 1900
+        FILE* f = nullptr;
+        errno_t eno = fopen_s(&f, m_fname.c_str(), "at");
+        if ((f != nullptr) && (eno != ERROR_SUCCESS))
+#else
         FILE *f = std::fopen(m_fname.c_str(), "at");
         if (f != nullptr)
+#endif
         {
             std::fprintf(f, this->str().c_str());
             std::fflush(f);
@@ -347,52 +359,174 @@ std::ostream& operator<<(const Foo& foo, std::ostream& os)
     os << foo.str();
     return os;
 }
+#else
+//#define FOO(s)  std::cerr << s << std::endl
+//class Foo
+//{
+//public:
+//    enum eMarker
+//    {
+//        endOfLine = 42
+//    };
+//};
+//#define foo std::cerr << std::endl; std::cerr
+#endif // diable FOO class
 
-
-int main(int argc, char ** argv, char **env)
+#if _MSC_VER >= 1900
+template<typename ...Args>
+std::string concat(Args ...args) 
 {
-    FOO("c:\\temp\\test.foo.log");
+    return (std::tostring(args) + ... + "");
+}
+#else
+std::string concat()
+{
+    return "";
+}
 
-    //Foo foo("c:\\temp\\test.foo.log", __FUNCTION__);
-    //foo << "Hello" << " " << "World" << Foo::endl << 42 << Foo::endl;
+template<typename T1, typename... T>
+std::string concat(T1 s, T... ts)
+{
+    std::stringstream ss;
+    ss << s << concat(ts...);
+    return ss.str();
+}
+#endif
 
-    std::cout << "Press <enter>:";
+#define CONCAT_TEST(a, b, c) concat_test(a, #c, c, b)
+
+class PassFail
+{
+public:
+    PassFail(bool val) : m_val(val) {}
+    virtual ~PassFail() {}
+
+    friend std::ostream& operator<<(std::ostream& os, const PassFail& pf);
+
+    bool v() const { return m_val; }
+
+    bool operator()() const { return m_val; }
+
+private:
+    bool m_val;
+};
+
+std::ostream& operator<<(std::ostream& os, const PassFail& pf)
+{
+    ConsoleDisplay::colText((pf.v() ? ConsoleDisplay::eGreen : ConsoleDisplay::eRed), ConsoleDisplay::eNone, (pf.v() ? "Passed" : "Failed"), os, true);
+    return os;
+}
+
+bool concat_test(std::string exp, std::string testCall, std::string testRes, std::string testName)
+{
+    bool result = (exp.compare(testRes) == 0);
+
+    ConsoleDisplay::colText(ConsoleDisplay::eYellow, ConsoleDisplay::eNone, "Test", std::cerr, true);
+    std::cerr << " [" << testName << "] -> ";
+    ConsoleDisplay::colText(ConsoleDisplay::eCyan, ConsoleDisplay::eNone, testCall, std::cerr, true);
+    std::cerr << " --> " << std::endl << "       got [" << testRes << "], expected [" << exp << "] --> " << PassFail(result) << std::endl;
+    return result;
+}
+
+const std::string DEFAULT_PROMPT("Press <enter>:");
+std::string getString(const char* prompt = DEFAULT_PROMPT.c_str(), std::ostream& os = std::cout)
+{
+    std::string _prompt(prompt == nullptr ? DEFAULT_PROMPT : prompt);
+    os << _prompt;
     std::string val;
     std::getline(std::cin, val, '\n');
 
-    //foo << "Set up the console" << Foo::endl;
+    return val;
+}
+
+int main(int argc, char ** argv, char **env)
+{
+    //GET_LOGGER("c:\\temp\\test.logger.log", foo);
+    //FOO("c:\\temp\\test.foo.log");
+
+    //Foo foo("c:\\temp\\test.foo.log", __FUNCTION__);
+    //foo << "Hello" << " " << "World" << Foo::endOfLine << 42 << Foo::endOfLine;
+
+    /*
+    std::cout << "Press <enter>:";
+    std::string val;
+    std::getline(std::cin, val, '\n');
+    /*/
+    getString();
+    //*/
+
+    //foo << "Set up the console" << Foo::endOfLine;
 
     //PConsoleDisplay pConsole = ConsoleDisplay::get();
     ConsoleDisplay& theConsole = ConsoleDisplay::get();
 
-    std::printf("Tests built: " __DATE__ ", " __TIME__ "\n");
+    std::cerr << "Tests built: " << __DATE__ << ", " << __TIME__ << std::endl << std::endl;
+
+    CONCAT_TEST("", "simple test 2", concat());
+    CONCAT_TEST("Hello World", "simple test 1", concat("Hello", " ", "World"));
 
     //Test1 t1("t1", "foo", "bar");
     //std::cerr << t1 << std::endl;
 
-    //foo << "Display all colour values" << Foo::endl;
+    //foo << "Display all colour values" << Foo::endOfLine;
 
-    ConsoleDisplay::allColours();
+    ConsoleDisplay::allColours(std::cerr);
 
-    //foo << "Test colour string evaluation" << Foo::endl;
+    //foo << "Test colour string evaluation" << Foo::endOfLine;
 
-    //ConsoleDisplay::eColours fore(ConsoleDisplay::B_White);
-    //ConsoleDisplay::eColours back(ConsoleDisplay::Red);
-    //std::cout << std::endl << "Test: fore [" << fore << ": " << ConsoleDisplay::ColourStr(fore);
-    //std::cout << "], back [" << back << ": " << ConsoleDisplay::ColourStr(back) << "] --> [";
+    ConsoleDisplay::eColours fore(ConsoleDisplay::eB_White);
+    ConsoleDisplay::eColours back(ConsoleDisplay::eRed);
+    //foo << "Display colour text" << Foo::endOfLine;
 
-    //foo << "Display colour text" << Foo::endl;
+    std::cerr << ConsoleDisplay::Green("Please be green") << std::endl;
 
-    //ConsoleDisplay::winCol(7, 4, "Hello", std::cout);
-    //ConsoleDisplay::colText(fore, back, "Hello", std::cout);
+    std::cout << std::endl << ConsoleDisplay::Yellow("Test:") << " fore " << ConsoleDisplay::Yellow("[") << std::setw(2) << fore
+        << ConsoleDisplay::Yellow(": ") << std::setw(12) << ConsoleDisplay::ColourStr(fore) << ConsoleDisplay::Yellow("]")
+        << ", back " << ConsoleDisplay::Yellow("[") << std::setw(2) << back << ConsoleDisplay::Yellow(": ") << std::setw(12)
+        << ConsoleDisplay::ColourStr(back) << ConsoleDisplay::Yellow("]") << " -->" << std::endl << "           [";
+    ConsoleDisplay::colText(fore, back, "Hello", std::cout);
+    ConsoleDisplay::colText(ConsoleDisplay::eBlack, ConsoleDisplay::eB_Cyan, " World", std::cout);
+    std::cout << "]" << std::endl;
 
-    //ConsoleDisplay::winCol(7, 2, " World", std::cerr);
-    //ConsoleDisplay::colText(ConsoleDisplay::Black, ConsoleDisplay::B_Cyan, " World", std::cerr);
-    //std::cout << "]" << std::endl << std::endl;
+    {
+        ConsoleDisplay::eColours b_yel(ConsoleDisplay::eB_Yellow);
+        ConsoleDisplay::eColours grn(ConsoleDisplay::eGreen);
+        ConsoleDisplay::eColours blk(ConsoleDisplay::eBlack);
+        ConsoleDisplay::eColours none(ConsoleDisplay::eNone);
+        ConsoleDisplay::eColours yel(ConsoleDisplay::eYellow);
+        ConsoleDisplay::eColours b_red(ConsoleDisplay::eB_Red);
 
-    //foo << "Run lookup tests" << Foo::endl;
+        std::cout << std::endl << ConsoleDisplay::Yellow("Test:") << " fore " << ConsoleDisplay::Yellow("[") << std::setw(2)
+            << b_yel << ConsoleDisplay::Yellow(": ") << std::setw(12) << ConsoleDisplay::ColourStr(b_yel)
+            << ConsoleDisplay::Yellow("]") << ", back " << ConsoleDisplay::Yellow("[") << std::setw(2) << grn
+            << ConsoleDisplay::Yellow(": ") << std::setw(12)<< ConsoleDisplay::ColourStr(grn) << ConsoleDisplay::Yellow("]")
+            << " -->" << std::endl;
+        std::cout << ConsoleDisplay::Yellow("    :") << " fore " << ConsoleDisplay::Yellow("[") << std::setw(2) << blk
+            << ConsoleDisplay::Yellow(": ") << std::setw(12) << ConsoleDisplay::ColourStr(blk) << ConsoleDisplay::Yellow("]")
+            << ", back " << ConsoleDisplay::Yellow("[") << std::setw(2) << none << ConsoleDisplay::Yellow(": ") << std::setw(12)
+            << ConsoleDisplay::ColourStr(none) << ConsoleDisplay::Yellow("]") << " -->" << std::endl;
+        std::cout << ConsoleDisplay::Yellow("    :") << " fore " << ConsoleDisplay::Yellow("[") << std::setw(2) << none
+            << ConsoleDisplay::Yellow(": ") << std::setw(12) << ConsoleDisplay::ColourStr(none) << ConsoleDisplay::Yellow("]")
+            << ", back " << ConsoleDisplay::Yellow("[") << std::setw(2) << yel << ConsoleDisplay::Yellow(": ") << std::setw(12)
+            << ConsoleDisplay::ColourStr(yel) << ConsoleDisplay::Yellow("]") << " -->" << std::endl;
+        std::cout << ConsoleDisplay::Yellow("    :") << " fore " << ConsoleDisplay::Yellow("[") << std::setw(2) << b_red
+            << ConsoleDisplay::Yellow(": ") << std::setw(12) << ConsoleDisplay::ColourStr(b_red) << ConsoleDisplay::Yellow("]")
+            << ", back " << ConsoleDisplay::Yellow("[") << std::setw(2) << none << ConsoleDisplay::Yellow(": ") << std::setw(12)
+            << ConsoleDisplay::ColourStr(none) << ConsoleDisplay::Yellow("]") << " -->" << std::endl;
 
-    //lookupTests();
+        std::cout << "           [";
+        ConsoleDisplay::colText(b_yel, grn, " Col 1 ", std::cout, false);
+        ConsoleDisplay::colText(blk, none, " Col 2 ", std::cout, false);
+        ConsoleDisplay::colText(none, yel, " Col 3 ", std::cout, false);
+        ConsoleDisplay::colText(b_red, none, " Col 4 ", std::cout);
+        std::cout << "]" << std::endl << std::endl;
+    }
+
+    //foo << "Run lookup tests" << Foo::endOfLine;
+
+    lookupTests();
+
+    getString("Test run complete, press <enter> to exit", std::cerr);
 
     return 0;
 }
